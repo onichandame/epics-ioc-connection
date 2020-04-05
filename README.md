@@ -1,40 +1,27 @@
-# Information
+# TSDX Bootstrap
 
-EPICS Channel Access in node.js.
+This project was bootstrapped with [TSDX](https://github.com/jaredpalmer/tsdx).
 
-# Installation
+## Local Development
 
-```bash
-npm install epics
-```
+Below is a list of commands you will probably find useful.
 
-Ensure either `EPICS_BASE` and `EPICS_HOST_ARCH` are set or
+### `npm start` or `yarn start`
 
-```bash
-export NODE_EPICS_LIBCA=/path/to/libca
-```
+Runs the project in development/watch mode. Your project will be rebuilt upon changes. TSDX has a special logger for you convenience. Error messages are pretty printed and formatted for compatibility VS Code's Problems tab.
 
-# Usage
+<img src="https://user-images.githubusercontent.com/4060187/52168303-574d3a00-26f6-11e9-9f3b-71dbec9ebfcb.gif" width="600" />
 
-```javascript
-var epics = require('epics');
+Your library will be rebuilt if you make edits.
 
-var pv = new epics.Channel('SR11BCM01:CURRENT_MONITOR');
-pv.on('value', function(data) {
-  console.log('Current:', data);
-});
-pv.connect(function() {
-  pv.monitor();
-});
-```
+### `npm run build` or `yarn build`
 
-# Tests
+Bundles the package to the `dist` folder.
+The package is optimized and bundled with Rollup into multiple formats (CommonJS, UMD, and ES Module).
 
-Tests can be run against an included IOC written in python and using the
-[pcaspy](https://code.google.com/p/pcaspy/) package.
+<img src="https://user-images.githubusercontent.com/4060187/52168322-a98e5b00-26f6-11e9-8cf6-222d716b75ef.gif" width="600" />
 
-To run the tests, install pcaspy and then run:
+### `npm test` or `yarn test`
 
-```bash
-npm test
-```
+Runs the test watcher (Jest) in an interactive mode.
+By default, runs tests related to files changed since the last commit.
