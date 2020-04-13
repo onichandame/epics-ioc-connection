@@ -1,3 +1,9 @@
+export const ConState = {
+  CS_NEVER_CONN: 0,
+  CS_PREV_CONN: 1,
+  CS_CONN: 2,
+  CS_CLOSED: 3
+}
 export const state = {
   ECA_NORMAL: 1,
   ECA_TIMEOUT: 80,

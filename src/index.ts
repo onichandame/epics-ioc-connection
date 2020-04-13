@@ -1,1 +1,1 @@
-export * as Channel from './ca'
+export * as ChannelAccess from './ca'

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { types, writeCString, readCString, reinterpret } from 'ref'
-import ArrayType from 'ref-array'
+import { types, writeCString, readCString, reinterpret } from 'ref-napi'
 import { join } from 'path'
-import { Library } from 'ffi'
+import { Library } from 'ffi-napi'
 
+import { DepError } from './error'
 import { EpicsType, nativeType } from './enum'
 
 let LIBCA_PATH = process.env.NODE_EPICS_LIBCA
@@ -13,7 +13,7 @@ if (!LIBCA_PATH) {
   }
 }
 if (!LIBCA_PATH) {
-  throw new Error('cannot find epics base installation')
+  throw DepError
 }
 
 const MAX_STRING_SIZE = 40
