@@ -1,11 +1,14 @@
-name: CI
-on: [push]
+name: Pubish
+on:
+  push:
+    branches:
+      - master
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Begin CI...
+      - name: Prepare repo...
         uses: actions/checkout@v2
 
       - name: Use Node 12
@@ -26,17 +29,17 @@ jobs:
         env:
           CI: true
 
-      - name: Lint
-        run: yarn lint
-        env:
-          CI: true
-
-      - name: Test
-        run: yarn test --ci --coverage --maxWorkers=2
-        env:
-          CI: true
-
       - name: Build
         run: yarn build
         env:
           CI: true
+
+      - name: Publish
+        uses: pascalgn/npm-publish-action@51fdb4531e99aac1873764ef7271af448dc42ab4
+        with: # All of theses inputs are optional
+          tag_name: "v%s"
+          tag_message: "v%s"
+          commit_pattern: "^(\\S+)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_AUTH_TOKEN: ${ secrets.NPM_AUTH_TOKEN }{}
