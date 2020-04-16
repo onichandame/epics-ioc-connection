@@ -8,13 +8,42 @@ export enum CommonState{
   ECA_EVDISALLOW = 210,
   ECA_BADTYPE=114,
   ECA_STRTOBIG=96,
+  ECA_BADCHID=410,
+  ECA_BADCOUNT=196,
+  ECA_GETFAIL=152,
+  ECA_NORDACCESS=368,
+  ECA_DISCONN=192
 }
 
-// state codes used by individual functions
-export type ContextReturnState = CommonState.ECA_NORMAL | CommonState.ECA_ALLOCMEM | CommonState.ECA_NOTTHREADED
-export type PendIoReturnState = CommonState.ECA_NORMAL | CommonState.ECA_TIMEOUT | CommonState.ECA_EVDISALLOW
-export type PendEventReturnState = CommonState.ECA_TIMEOUT | CommonState.ECA_EVDISALLOW
-export type CreateChannelReturnState = CommonState.ECA_NORMAL | CommonState.ECA_BADTYPE | CommonState.ECA_STRTOBIG | CommonState.ECA_ALLOCMEM
+// state codes returned by individual functions
+export type ContextReturnState =
+  | CommonState.ECA_NORMAL
+  | CommonState.ECA_ALLOCMEM
+  | CommonState.ECA_NOTTHREADED
+export type PendIoReturnState =
+  | CommonState.ECA_NORMAL
+  | CommonState.ECA_TIMEOUT
+  | CommonState.ECA_EVDISALLOW
+export type PendEventReturnState =
+  | CommonState.ECA_TIMEOUT
+  | CommonState.ECA_EVDISALLOW
+export type CreateChannelReturnState =
+  | CommonState.ECA_NORMAL
+  | CommonState.ECA_BADTYPE
+  | CommonState.ECA_STRTOBIG
+  | CommonState.ECA_ALLOCMEM
+export type ClearSubscriptionReturnState=
+  | CommonState.ECA_NORMAL
+  | CommonState.ECA_BADCHID
+export type GetReturnState=
+  | CommonState.ECA_NORMAL
+  | CommonState.ECA_BADTYPE
+  | CommonState.ECA_BADCHID
+  | CommonState.ECA_BADCOUNT
+  | CommonState.ECA_GETFAIL
+  | CommonState.ECA_NORDACCESS
+  | CommonState.ECA_ALLOCMEM
+  | CommonState.ECA_DISCONN
 
 export const ReturnState = {
   ECA_IODONE: 339,

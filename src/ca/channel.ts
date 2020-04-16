@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { Type, deref, alloc, refType, types, writeCString, readCString, reinterpret } from 'ref-napi'
+import { deref, refType, types, readCString, reinterpret } from 'ref-napi'
 import { ArrayType } from 'ref-array-napi'
 import { StructType } from 'ref-struct-napi'
 import { Library, Callback } from 'ffi-napi'
@@ -18,14 +18,29 @@ import {
   ConState,
   CommonState,
   State,
-  ContextReturnState,
+  // ContextReturnState,
   PendIoReturnState,
   PendEventReturnState,
-  CreateChannelReturnState
+  CreateChannelReturnState,
+  ClearSubscriptionReturnState,
+  GetReturnState
 } from './enum'
 
 type ConnectOption={
   timeout?: number;
+}
+
+type GetOption={
+  fieldType?: FieldType;
+}
+
+type CallbackArgs={
+  usr: Buffer;
+  chid: number;
+  type: number;
+  count: number;
+  dbr: Buffer;
+  status: State;
 }
 
 let LIBCA_PATH = process.env.NODE_EPICS_LIBCA
@@ -41,7 +56,7 @@ if (!LIBCA_PATH) {
 const MAX_STRING_SIZE = 40
 const pendDelay = 1.e-5
 const size_tPtr = refType(types.size_t)
-const dblPtr = refType(types.double)
+// const dblPtr = refType(types.double)
 
 const chanId = types.long
 const evId = types.long
@@ -69,9 +84,9 @@ const libca = Library(LIBCA_PATH, {
   ca_clear_channel: ['int', [chanId]]
 })
 
-const getContext = (): ContextReturnState => libca.ca_context_create(1) // may be messing threads here
+// const getContext = (): ContextReturnState => libca.ca_context_create(1) // may be messing threads here
 
-const context = getContext()
+// const context = getContext()
 
 const message = (code: State): string => libca.ca_message(code)
 
@@ -89,14 +104,14 @@ const pend = (): Promise<void> => {
   })
 }
 
-const stringArrayToBuffer = (array: string[]): Buffer => {
-  const count = array.length
-  const buf = Buffer.alloc(count * MAX_STRING_SIZE)
-  for (let i = 0; i < count; i += 1) {
-    writeCString(buf, i * MAX_STRING_SIZE, array[i])
-  }
-  return buf
-}
+// const stringArrayToBuffer = (array: string[]): Buffer => {
+//   const count = array.length
+//   const buf = Buffer.alloc(count * MAX_STRING_SIZE)
+//   for (let i = 0; i < count; i += 1) {
+//     writeCString(buf, i * MAX_STRING_SIZE, array[i])
+//   }
+//   return buf
+// }
 
 const coerceBufferToStringOrArray = (buf: Buffer, dbrType: EpicsType, count: number): Array<string> | string => {
   let result: string[] = []
@@ -130,17 +145,18 @@ const evargs_t = StructType({
 export class Channel extends EventEmitter {
   private _field_type: FieldType
   private _count: number
-  private _monitor_callback_ptr: Callback | undefined
+  //  private _monitor_callback_ptr: Callback | undefined
   private _monitor_event_id_ptr: Buffer | undefined
-  private _callback_ptrs: Callback[]
+  private _callback_ptrs: Buffer[]
   private _connection_state_change_ptr: Buffer| undefined
-  private _chid: number|undefined
+  private _chid: number|null
 
   constructor (private _pvname: string) {
     super()
     this._field_type = FieldType.DBF_NO_ACCESS
     this._count = 0
     this._callback_ptrs = []
+    this._chid = null
   }
 
   public get state (): State {
@@ -156,12 +172,14 @@ export class Channel extends EventEmitter {
 
   public async connect ({ timeout = 2000 }: ConnectOption): Promise<void> {
     const chidPtr = Buffer.alloc(chanId.size)
-    chidPtr.writeBigInt64LE(BigInt(0), 0);
-    (chidPtr as any).type = chanId
+    chidPtr.writeBigInt64LE(BigInt(0), 0)
+    // (chidPtr as any).type = chanId
 
     let firstCallback = true
+    const userDataPtr = null
+    const priority = 0
 
-    this._connection_state_change_ptr = new Callback('int', ['pointer', 'long'], (_: number, ev: number) => {
+    this._connection_state_change_ptr = new Callback('void', ['pointer', 'long'], (_: number, ev: number) => {
       this._field_type = libca.ca_field_type(this._chid)
       this._count = libca.ca_element_count(this._chid)
       this.emit('connection', ev)
@@ -173,7 +191,7 @@ export class Channel extends EventEmitter {
       }
       return 0
     })
-    const caCode: CreateChannelReturnState = libca.ca_create_channel(this._pvname, this._connection_state_change_ptr, null, 0, chidPtr)
+    const caCode: CreateChannelReturnState = libca.ca_create_channel(this._pvname, this._connection_state_change_ptr, userDataPtr, priority, chidPtr)
     await pend()
     this._chid = deref(chidPtr)
     if (caCode !== CommonState.ECA_NORMAL) {
@@ -190,17 +208,31 @@ export class Channel extends EventEmitter {
 
   public async disconnect (): Promise<void> {
     if (typeof this._monitor_event_id_ptr !== 'undefined') {
-      const csCode = libca.ca_clear_subscription(deref(this._monitor_event_id_ptr))
+      const csCode: ClearSubscriptionReturnState = libca.ca_clear_subscription(deref(this._monitor_event_id_ptr))
       await pend()
       if (csCode !== CommonState.ECA_NORMAL) {
         throw message(csCode)
       }
     }
+    this._chid = null
   }
 
-  public async get (): Promise<string> {
-  }
-
-  public async put (value: string): Promise<void> {
+  public get ({ fieldType = this._field_type }: GetOption): Promise<string|string[]> {
+    return new Promise((resolve, reject) => {
+      const getCallbackPtr = Callback('void', [evargs_t], ({ status, dbr, type }: CallbackArgs) => {
+        if (status !== CommonState.ECA_NORMAL) {
+          return reject(new Error(message(status)))
+        }
+        const value = coerceBufferToStringOrArray(dbr, type, this._count)
+        resolve(value)
+        this._callback_ptrs.splice(this._callback_ptrs.indexOf(getCallbackPtr), 1)
+      })
+      this._callback_ptrs.push(getCallbackPtr)
+      const usrArg = null
+      const getCode: GetReturnState = libca.ca_array_get_callback(fieldType, this._count, this._chid, getCallbackPtr, usrArg)
+      if (getCode !== CommonState.ECA_NORMAL) {
+        return reject(new Error(message(getCode)))
+      }
+    })
   }
 }
