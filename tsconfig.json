@@ -21,9 +21,12 @@
     "moduleResolution": "node",
     "baseUrl": "./",
     "paths": {
-      "*": ["src/*", "node_modules/*"]
+      "*": ["src/types/*", "node_modules/*"]
     },
     "jsx": "react",
     "esModuleInterop": true
-  }
+  },
+  "exclude":[
+    "src/types"
+  ]
 }

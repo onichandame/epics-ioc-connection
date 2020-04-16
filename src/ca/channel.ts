@@ -1,10 +1,23 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { types, writeCString, readCString, reinterpret } from 'ref-napi'
+import { ArrayType } from 'ref-array-napi'
 import { join } from 'path'
 import { Library } from 'ffi-napi'
 
-import { DepError } from './error'
-import { EpicsType, nativeType } from './enum'
+import {
+  DepError,
+  GetError,
+  PutError
+} from './error'
+import {
+  EpicsType,
+  nativeTypeToString,
+  epicsTypeToNativeType,
+  State,
+  ContextReturnState,
+  PendIoReturnState,
+  PendEventReturnState
+} from './enum'
 
 let LIBCA_PATH = process.env.NODE_EPICS_LIBCA
 if (!LIBCA_PATH) {
@@ -45,15 +58,24 @@ const libca = Library(LIBCA_PATH, {
   ca_clear_channel: ['int', [chanId]]
 })
 
-const getContext = (): number => libca.ca_context_create(1)
+const getContext = (): ContextReturnState => libca.ca_context_create(1) // may be messing threads here
 
 const context = getContext()
 
-const message = (code: number): string => libca.ca_message(code)
+const message = (code: State): string => libca.ca_message(code)
 
-const pend = (): void => {
-  libca.ca_pend_event(pendDelay)
-  libca.ca_pend_io(pendDelay)
+const pend = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const eventCode: PendEventReturnState = libca.ca_pend_event(pendDelay)
+    const ioCode: PendIoReturnState = libca.ca_pend_io(pendDelay)
+    if (eventCode !== State.ECA_TIMEOUT) {
+      reject(PutError)
+    } else if (ioCode !== State.ECA_NORMAL) {
+      reject(GetError)
+    } else {
+      resolve()
+    }
+  })
 }
 
 const stringArrayToBuffer = (array: string[]): Buffer => {
@@ -65,23 +87,23 @@ const stringArrayToBuffer = (array: string[]): Buffer => {
   return buf
 }
 
-const coerceBufferToNativeType = (buf: Buffer, dbrType: EpicsType, count: number) => {
-  const result: string[] = []
-  if (dbrType === 'STRING') {
+const coerceBufferToString = (buf: Buffer, dbrType: EpicsType, count: number): Array<string> | string => {
+  let result: string[] = []
+  if (dbrType === EpicsType.STRING) {
     const bufRef = reinterpret(buf, count * MAX_STRING_SIZE)
     for (let i = 0; i < count; i++) {
       result.push(readCString(bufRef, i * MAX_STRING_SIZE))
     }
   } else {
-    const GetArrayType = ArrayType(types[nativeType[dbrType]])
-    var array = new GetArrayType(buf)
-    array.length = count
-    array = array.toArray()
+    const GetArrayType = ArrayType<string>('CString')
+    const array = new GetArrayType(buf)
+    result.length = count
+    result = array.toArray()
   }
   if (count === 1) {
-    return array[0]
+    return result[0]
   } else {
-    return array
+    return result
   }
 }
 
