@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { deref, refType, types, readCString, reinterpret } from 'ref-napi'
 import { ArrayType } from 'ref-array-napi'
-import { Struct } from 'ref-struct-napi'
+import Struct from 'ref-struct-napi'
 import { Library, Callback } from 'ffi-napi'
 import { EventEmitter } from 'events'
 import { join } from 'path'
@@ -193,7 +193,9 @@ export class Channel extends EventEmitter {
     })
     const caCode: CreateChannelReturnState = libca.ca_create_channel(this._pvname, this._connection_state_change_ptr, userDataPtr, priority, chidPtr)
     await pend()
+    console.log(deref(chidPtr))
     this._chid = deref(chidPtr)
+    console.log('bitch')
     if (caCode !== CommonState.ECA_NORMAL) {
       firstCallback = false
       throw ConError

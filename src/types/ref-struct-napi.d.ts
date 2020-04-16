@@ -56,3 +56,4 @@ export const Struct: {
     (fields?: object, opt?: object): StructType;
     (fields?: any[]): StructType;
 }
+export default Struct

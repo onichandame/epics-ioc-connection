@@ -1,4 +1,4 @@
-const { Channel } = require('./dist')
+const { Channel } = require('.')
 
 const channel = new Channel('xiaoHost:ai1');
 
