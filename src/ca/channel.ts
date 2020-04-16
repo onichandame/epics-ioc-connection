@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { deref, refType, types, readCString, reinterpret } from 'ref-napi'
 import { ArrayType } from 'ref-array-napi'
-import { StructType } from 'ref-struct-napi'
+import { Struct } from 'ref-struct-napi'
 import { Library, Callback } from 'ffi-napi'
 import { EventEmitter } from 'events'
 import { join } from 'path'
@@ -133,7 +133,7 @@ const coerceBufferToStringOrArray = (buf: Buffer, dbrType: EpicsType, count: num
   }
 }
 
-const evargs_t = StructType({
+const evargs_t = Struct({
   usr: size_tPtr,
   chid: chanId,
   type: types.long,

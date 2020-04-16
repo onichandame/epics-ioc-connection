@@ -50,7 +50,7 @@ interface StructType extends ref.Type {
 }
 
 /** The struct type meta-constructor. */
-export const StructType: {
+export const Struct: {
     new (fields?: object, opt?: object): StructType;
     new (fields?: any[]): StructType;
     (fields?: object, opt?: object): StructType;
