@@ -1,27 +1,30 @@
 import { types } from 'ref-napi'
 // state code
-export enum State{
-ECA_NORMAL = 1,
-ECA_TIMEOUT = 80,
-ECA_ALLOCMEM = 48,
-ECA_NOTTHREADED = 458,
-ECA_EVDISALLOW = 210,
+export enum CommonState{
+  ECA_NORMAL = 1,
+  ECA_TIMEOUT = 80,
+  ECA_ALLOCMEM = 48,
+  ECA_NOTTHREADED = 458,
+  ECA_EVDISALLOW = 210,
+  ECA_BADTYPE=114,
+  ECA_STRTOBIG=96,
 }
 
 // state codes used by individual functions
-export type ContextReturnState = State.ECA_NORMAL | State.ECA_ALLOCMEM | State.ECA_NOTTHREADED
-export type PendIoReturnState = State.ECA_NORMAL | State.ECA_TIMEOUT | State.ECA_EVDISALLOW
-export type PendEventReturnState = State.ECA_TIMEOUT | State.ECA_EVDISALLOW
+export type ContextReturnState = CommonState.ECA_NORMAL | CommonState.ECA_ALLOCMEM | CommonState.ECA_NOTTHREADED
+export type PendIoReturnState = CommonState.ECA_NORMAL | CommonState.ECA_TIMEOUT | CommonState.ECA_EVDISALLOW
+export type PendEventReturnState = CommonState.ECA_TIMEOUT | CommonState.ECA_EVDISALLOW
+export type CreateChannelReturnState = CommonState.ECA_NORMAL | CommonState.ECA_BADTYPE | CommonState.ECA_STRTOBIG | CommonState.ECA_ALLOCMEM
 
 export const ReturnState = {
   ECA_IODONE: 339,
   ECA_ISATTACHED: 424
 }
-export const ConState = {
-  CS_NEVER_CONN: 0,
-  CS_PREV_CONN: 1,
-  CS_CONN: 2,
-  CS_CLOSED: 3
+export enum ConState {
+  CS_NEVER_CONN,
+  CS_PREV_CONN,
+  CS_CONN,
+  CS_CLOSED
 }
 export const state = {
   OP_CONN_UP: 6,
@@ -38,6 +41,19 @@ export const mask = {
   DBE_ALARM: 4,
   DBE_PROPERTY: 8
 }
+
+export enum FieldType{
+  DBF_STRING,
+  DBF_INT,
+  DBF_SHORT,
+  DBF_FLOAT,
+  DBF_ENUM,
+  DBF_CHAR,
+  DBF_LONG,
+  DBF_DOUBLE,
+  DBF_NO_ACCESS,
+}
+
 export enum EpicsType {
   STRING,
   INT,
@@ -109,3 +125,4 @@ export const epicsTypeToNativeType = (etype: EpicsType): NativeType => {
       return NativeType.CString
   }
 }
+export type State=number

@@ -1,23 +1,32 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { types, writeCString, readCString, reinterpret } from 'ref-napi'
+import { Type, deref, alloc, refType, types, writeCString, readCString, reinterpret } from 'ref-napi'
 import { ArrayType } from 'ref-array-napi'
+import { StructType } from 'ref-struct-napi'
+import { Library, Callback } from 'ffi-napi'
+import { EventEmitter } from 'events'
 import { join } from 'path'
-import { Library } from 'ffi-napi'
 
 import {
+  ConError,
   DepError,
   GetError,
   PutError
 } from './error'
 import {
   EpicsType,
-  nativeTypeToString,
-  epicsTypeToNativeType,
+  FieldType,
+  ConState,
+  CommonState,
   State,
   ContextReturnState,
   PendIoReturnState,
-  PendEventReturnState
+  PendEventReturnState,
+  CreateChannelReturnState
 } from './enum'
+
+type ConnectOption={
+  timeout?: number;
+}
 
 let LIBCA_PATH = process.env.NODE_EPICS_LIBCA
 if (!LIBCA_PATH) {
@@ -31,9 +40,11 @@ if (!LIBCA_PATH) {
 
 const MAX_STRING_SIZE = 40
 const pendDelay = 1.e-5
+const size_tPtr = refType(types.size_t)
+const dblPtr = refType(types.double)
 
 const chanId = types.long
-const evid = types.long
+const evId = types.long
 const chtype = types.long
 
 const libca = Library(LIBCA_PATH, {
@@ -54,7 +65,7 @@ const libca = Library(LIBCA_PATH, {
   ca_array_put_callback: ['int', [chtype, 'ulong', chanId, 'pointer',
     'pointer', 'pointer']],
   ca_create_subscription: ['int', ['int', 'ulong', chanId, 'long', 'pointer', 'pointer', 'pointer']],
-  ca_clear_subscription: ['int', [evid]],
+  ca_clear_subscription: ['int', [evId]],
   ca_clear_channel: ['int', [chanId]]
 })
 
@@ -68,9 +79,9 @@ const pend = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     const eventCode: PendEventReturnState = libca.ca_pend_event(pendDelay)
     const ioCode: PendIoReturnState = libca.ca_pend_io(pendDelay)
-    if (eventCode !== State.ECA_TIMEOUT) {
+    if (eventCode !== CommonState.ECA_TIMEOUT) {
       reject(PutError)
-    } else if (ioCode !== State.ECA_NORMAL) {
+    } else if (ioCode !== CommonState.ECA_NORMAL) {
       reject(GetError)
     } else {
       resolve()
@@ -87,7 +98,7 @@ const stringArrayToBuffer = (array: string[]): Buffer => {
   return buf
 }
 
-const coerceBufferToString = (buf: Buffer, dbrType: EpicsType, count: number): Array<string> | string => {
+const coerceBufferToStringOrArray = (buf: Buffer, dbrType: EpicsType, count: number): Array<string> | string => {
   let result: string[] = []
   if (dbrType === EpicsType.STRING) {
     const bufRef = reinterpret(buf, count * MAX_STRING_SIZE)
@@ -107,12 +118,84 @@ const coerceBufferToString = (buf: Buffer, dbrType: EpicsType, count: number): A
   }
 }
 
-export class Channel {
-  constructor (private pvname: string) {}
-  public async connect (): Promise<void> {
+const evargs_t = StructType({
+  usr: size_tPtr,
+  chid: chanId,
+  type: types.long,
+  count: types.long,
+  dbr: size_tPtr,
+  status: types.int
+})
+
+export class Channel extends EventEmitter {
+  private _field_type: FieldType
+  private _count: number
+  private _monitor_callback_ptr: Callback | undefined
+  private _monitor_event_id_ptr: Buffer | undefined
+  private _callback_ptrs: Callback[]
+  private _connection_state_change_ptr: Buffer| undefined
+  private _chid: number|undefined
+
+  constructor (private _pvname: string) {
+    super()
+    this._field_type = FieldType.DBF_NO_ACCESS
+    this._count = 0
+    this._callback_ptrs = []
+  }
+
+  public get state (): State {
+    if (typeof this._chid === 'undefined') {
+      return ConState.CS_CLOSED
+    }
+    return libca.ca_state(this._chid)
+  }
+
+  public get connected (): boolean {
+    return this.state === ConState.CS_CONN
+  }
+
+  public async connect ({ timeout = 2000 }: ConnectOption): Promise<void> {
     const chidPtr = Buffer.alloc(chanId.size)
-    chidPtr.writeBigInt64LE(0 as bigint, 0)
-    chidPtr.type = chanId
+    chidPtr.writeBigInt64LE(BigInt(0), 0);
+    (chidPtr as any).type = chanId
+
+    let firstCallback = true
+
+    this._connection_state_change_ptr = new Callback('int', ['pointer', 'long'], (_: number, ev: number) => {
+      this._field_type = libca.ca_field_type(this._chid)
+      this._count = libca.ca_element_count(this._chid)
+      this.emit('connection', ev)
+      if (firstCallback) {
+        firstCallback = false
+        if (this.state !== ConState.CS_CONN) {
+          throw ConError
+        }
+      }
+      return 0
+    })
+    const caCode: CreateChannelReturnState = libca.ca_create_channel(this._pvname, this._connection_state_change_ptr, null, 0, chidPtr)
+    await pend()
+    this._chid = deref(chidPtr)
+    if (caCode !== CommonState.ECA_NORMAL) {
+      firstCallback = false
+      throw ConError
+    }
+    setTimeout(() => {
+      if (this.state === ConState.CS_NEVER_CONN) {
+        firstCallback = false
+        throw ConError
+      }
+    }, timeout)
+  }
+
+  public async disconnect (): Promise<void> {
+    if (typeof this._monitor_event_id_ptr !== 'undefined') {
+      const csCode = libca.ca_clear_subscription(deref(this._monitor_event_id_ptr))
+      await pend()
+      if (csCode !== CommonState.ECA_NORMAL) {
+        throw message(csCode)
+      }
+    }
   }
 
   public async get (): Promise<string> {

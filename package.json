@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "ffi-napi": "^2.4.7",
-    "ref-array-napi": "^1.2.0"
+    "ref-array-napi": "^1.2.0",
+    "ref-struct-napi": "^1.1.0"
   }
 }

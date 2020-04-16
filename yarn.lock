@@ -4933,6 +4933,14 @@ ref-struct-di@^1.1.0:
   dependencies:
     debug "^3.1.0"
 
+ref-struct-napi@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/ref-struct-napi/-/ref-struct-napi-1.1.0.tgz#fb2fa869912974753dfe2c8868ee5de0db62febe"
+  integrity sha512-9GwNq6PwVKhe8ZX4E51+3knUMJfyQumT9RCsXHBRDPfSYbOfK34TbQlEyvfuPOsb0xOlqzkR3CkTmD8gIdmtgQ==
+  dependencies:
+    debug "2"
+    ref-napi "^1.4.2"
+
 regenerate-unicode-properties@^8.2.0:
   version "8.2.0"
   resolved "https://registry.yarnpkg.com/regenerate-unicode-properties/-/regenerate-unicode-properties-8.2.0.tgz#e5de7111d655e7ba60c057dbe9ff37c87e65cdec"
