@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Type definitions for ref-struct
 // Project: https://github.com/TooTallNate/ref-struct
 // Definitions by: Paul Loyd <https://github.com/loyd>
