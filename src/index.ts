@@ -1,1 +1,1 @@
-export * from './ca'
+export * as CA from './ca'

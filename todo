@@ -1,3 +1,5 @@
-1. test caget/caput/camonitor
-2. implement ca using napi
-3. implement ca using pure ts
+separate types to DefinitelyTyped
+write unit test
+test caget/caput/camonitor
+implement ca using napi
+implement ca using pure ts
