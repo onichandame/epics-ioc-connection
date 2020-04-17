@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { RefBuffer, deref, refType, types, readCString, reinterpret } from 'ref-napi'
+import { RefBuffer, deref, refType, types, writeCString, readCString, reinterpret } from 'ref-napi'
 import Struct from 'ref-struct-napi'
 import { Library, Callback } from 'ffi-napi'
 import { EventEmitter } from 'events'
@@ -105,14 +105,20 @@ const pend = (): Promise<void> => {
   })
 }
 
-// const stringArrayToBuffer = (array: string[]): Buffer => {
-//   const count = array.length
-//   const buf = Buffer.alloc(count * MAX_STRING_SIZE)
-//   for (let i = 0; i < count; i += 1) {
-//     writeCString(buf, i * MAX_STRING_SIZE, array[i])
-//   }
-//   return buf
-// }
+const stringArrayToBuffer = (raw: Value): RefBuffer => {
+  const count = Array.isArray(raw) ? raw.length : 1
+  const array: string[] = Array(count)
+  if (Array.isArray(raw)) {
+    raw.forEach((item, index) => {
+      array[index] = item.toString()
+    })
+  }
+  const buf = Buffer.alloc(count * MAX_STRING_SIZE)
+  for (let i = 0; i < count; i += 1) {
+    writeCString(buf, i * MAX_STRING_SIZE, array[i])
+  }
+  return buf
+}
 
 const evargs_t = Struct({
   usr: size_tPtr,
@@ -253,6 +259,27 @@ export class Channel extends EventEmitter {
         return reject(new Error(message(getCode)))
       }
       pend()
+    })
+  }
+
+  public put (value: Value): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const putCallbackPtr = Callback('void', [evargs_t], ({ status }: CallbackArgs) => {
+        if (status !== CommonState.ECA_NORMAL) {
+          reject(PutError)
+        } else {
+          resolve()
+        }
+      })
+      const count = Array.isArray(value) ? value.length : 1
+      const buf: RefBuffer = stringArrayToBuffer(value)
+      const usrArg = null
+      const apCode = libca.ca_array_put_callback(DataType.STRING, count, this._chid, buf, putCallbackPtr, usrArg)
+      pend().then(() => {
+        if (apCode !== CommonState.ECA_NORMAL) {
+          reject(PutError)
+        }
+      })
     })
   }
 }
