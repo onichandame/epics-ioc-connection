@@ -1,0 +1,3 @@
+1. test caget/caput/camonitor
+2. implement ca using napi
+3. implement ca using pure ts

@@ -219,7 +219,6 @@ export class Channel extends EventEmitter {
         reject(ConError)
       }
       setTimeout(() => {
-        console.log('hi')
         if (this.state === ConState.CS_NEVER_CONN) {
           firstCallback = false
           reject(ConError)
