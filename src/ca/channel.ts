@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { RefBuffer, deref, refType, types, readCString, reinterpret } from 'ref-napi'
+import { Type, RefBuffer, deref, refType, types, readCString, reinterpret } from 'ref-napi'
 import { ArrayType } from 'ref-array-napi'
 import Struct from 'ref-struct-napi'
 import { Library, Callback } from 'ffi-napi'
@@ -44,6 +44,11 @@ type CallbackArgs={
   dbr: RefBuffer;
   status: State;
 }
+
+type Value=
+  | number
+  | string
+  | Array<number|string>
 
 let LIBCA_PATH = process.env.NODE_EPICS_LIBCA
 if (!LIBCA_PATH) {
@@ -119,26 +124,6 @@ const pend = (): Promise<void> => {
 //   return buf
 // }
 
-const coerceBufferToStringOrArray = (buf: RefBuffer, dbrType: EpicsType, count: number): Array<string> | string => {
-  let result: string[] = []
-  if (dbrType === EpicsType.STRING) {
-    const bufRef = reinterpret(buf, count * MAX_STRING_SIZE)
-    for (let i = 0; i < count; i++) {
-      result.push(readCString(bufRef, i * MAX_STRING_SIZE))
-    }
-  } else {
-    const GetArrayType = ArrayType<string>('CString')
-    const array = new GetArrayType(buf)
-    result.length = count
-    result = array.toArray()
-  }
-  if (count === 1) {
-    return result[0]
-  } else {
-    return result
-  }
-}
-
 const evargs_t = Struct({
   usr: size_tPtr,
   chid: chanId,
@@ -163,6 +148,59 @@ export class Channel extends EventEmitter {
     this._count = 0
     this._callback_ptrs = []
     this._chid = null
+  }
+
+  private epicsTypeToRefType (etype: EpicsType): Type {
+    switch (etype) {
+      case EpicsType.STRING:
+        return types.CString
+      case EpicsType.LONG:
+      case EpicsType.ENUM:
+      case EpicsType.INT:
+      case EpicsType.SHORT:
+        return types.int
+      case EpicsType.FLOAT:
+        return types.float
+      case EpicsType.CHAR:
+        return types.char
+      case EpicsType.DOUBLE:
+        return types.double
+      default:
+        return types.CString
+    }
+  }
+
+  private parseValue (buf: RefBuffer, dbrType: EpicsType, count: number): Value {
+    let result: Value = []
+    if (dbrType === EpicsType.STRING) {
+      const bufRef = reinterpret(buf, count * MAX_STRING_SIZE)
+      for (let i = 0; i < count; i++) {
+        result.push(readCString(bufRef, i * MAX_STRING_SIZE))
+      }
+    } else {
+      let GetArrayType: ArrayType<string|number>
+      switch (this.epicsTypeToRefType(dbrType)) {
+        case types.long:
+        case types.int:
+        case types.short:
+        case types.float:
+          GetArrayType = ArrayType<number>(this.epicsTypeToRefType(dbrType))
+          break
+        case types.CString:
+        case types.char:
+        default:
+          GetArrayType = ArrayType<string>(this.epicsTypeToRefType(dbrType))
+          break
+      }
+      const array = new GetArrayType(buf)
+      result.length = count
+      result = array.toArray()
+    }
+    if (count === 1) {
+      return result[0]
+    } else {
+      return result
+    }
   }
 
   public get state (): State {
@@ -239,7 +277,7 @@ export class Channel extends EventEmitter {
         if (status !== CommonState.ECA_NORMAL) {
           return reject(new Error(message(status)))
         }
-        resolve(coerceBufferToStringOrArray(dbr, type, this._count))
+        resolve(this.parseValue(dbr, type, this._count))
         this._callback_ptrs.splice(this._callback_ptrs.indexOf(getCallbackPtr), 1)
       })
       this._callback_ptrs.push(getCallbackPtr)

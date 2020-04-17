@@ -1,4 +1,4 @@
-import { types } from 'ref-napi'
+import { types, Type } from 'ref-napi'
 // state code
 export enum CommonState{
   ECA_NORMAL = 1,
@@ -115,48 +115,23 @@ export enum EpicsType {
   CTRL_DOUBLE,
 }
 
-export enum NativeType {
-  CString,
-  float,
-  char,
-  int,
-  double,
-}
-
-export const nativeTypeToString = (ntype: NativeType): keyof typeof types => {
-  switch (ntype) {
-    case NativeType.CString:
-      return 'CString'
-    case NativeType.float:
-      return 'float'
-    case NativeType.char:
-      return 'char'
-    case NativeType.int:
-      return 'int'
-    case NativeType.double:
-      return 'double'
-    default:
-      return 'CString'
-  }
-}
-
-export const epicsTypeToNativeType = (etype: EpicsType): NativeType => {
+export const epicsTypeToRefType = (etype: EpicsType): Type => {
   switch (etype) {
     case EpicsType.STRING:
-      return NativeType.CString
+      return types.CString
     case EpicsType.LONG:
     case EpicsType.ENUM:
     case EpicsType.INT:
     case EpicsType.SHORT:
-      return NativeType.int
+      return types.int
     case EpicsType.FLOAT:
-      return NativeType.float
+      return types.float
     case EpicsType.CHAR:
-      return NativeType.char
+      return types.char
     case EpicsType.DOUBLE:
-      return NativeType.double
+      return types.double
     default:
-      return NativeType.CString
+      return types.CString
   }
 }
 export type State=number
