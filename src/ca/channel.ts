@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { deref, refType, types, readCString, reinterpret } from 'ref-napi'
+import { RefBuffer, deref, refType, types, readCString, reinterpret } from 'ref-napi'
 import { ArrayType } from 'ref-array-napi'
 import Struct from 'ref-struct-napi'
 import { Library, Callback } from 'ffi-napi'
@@ -23,7 +23,8 @@ import {
   PendEventReturnState,
   CreateChannelReturnState,
   ClearSubscriptionReturnState,
-  GetReturnState
+  GetReturnState,
+  ClearChannelState
 } from './enum'
 
 type ConnectOption={
@@ -35,11 +36,11 @@ type GetOption={
 }
 
 type CallbackArgs={
-  usr: Buffer;
+  usr: RefBuffer;
   chid: number;
   type: number;
   count: number;
-  dbr: Buffer;
+  dbr: RefBuffer;
   status: State;
 }
 
@@ -113,7 +114,7 @@ const pend = (): Promise<void> => {
 //   return buf
 // }
 
-const coerceBufferToStringOrArray = (buf: Buffer, dbrType: EpicsType, count: number): Array<string> | string => {
+const coerceBufferToStringOrArray = (buf: RefBuffer, dbrType: EpicsType, count: number): Array<string> | string => {
   let result: string[] = []
   if (dbrType === EpicsType.STRING) {
     const bufRef = reinterpret(buf, count * MAX_STRING_SIZE)
@@ -146,9 +147,9 @@ export class Channel extends EventEmitter {
   private _field_type: FieldType
   private _count: number
   //  private _monitor_callback_ptr: Callback | undefined
-  private _monitor_event_id_ptr: Buffer | undefined
-  private _callback_ptrs: Buffer[]
-  private _connection_state_change_ptr: Buffer| undefined
+  private _monitor_event_id_ptr: RefBuffer | undefined
+  private _callback_ptrs: RefBuffer[]
+  private _connection_state_change_ptr: RefBuffer| undefined
   private _chid: number|null
 
   constructor (private _pvname: string) {
@@ -160,7 +161,7 @@ export class Channel extends EventEmitter {
   }
 
   public get state (): State {
-    if (typeof this._chid === 'undefined') {
+    if (this._chid === null) {
       return ConState.CS_CLOSED
     }
     return libca.ca_state(this._chid)
@@ -171,9 +172,9 @@ export class Channel extends EventEmitter {
   }
 
   public async connect ({ timeout = 2000 }: ConnectOption): Promise<void> {
-    const chidPtr = Buffer.alloc(chanId.size)
+    const chidPtr: RefBuffer = Buffer.alloc(chanId.size)
+    chidPtr.type = chanId
     chidPtr.writeBigInt64LE(BigInt(0), 0)
-    // (chidPtr as any).type = chanId
 
     let firstCallback = true
     const userDataPtr = null
@@ -189,13 +190,11 @@ export class Channel extends EventEmitter {
           throw ConError
         }
       }
-      return 0
     })
     const caCode: CreateChannelReturnState = libca.ca_create_channel(this._pvname, this._connection_state_change_ptr, userDataPtr, priority, chidPtr)
+    console.log(typeof deref(chidPtr))
     await pend()
-    console.log(deref(chidPtr))
     this._chid = deref(chidPtr)
-    console.log('bitch')
     if (caCode !== CommonState.ECA_NORMAL) {
       firstCallback = false
       throw ConError
@@ -216,6 +215,13 @@ export class Channel extends EventEmitter {
         throw message(csCode)
       }
     }
+    if (this._chid) {
+      const ccCode: ClearChannelState = libca.ca_clear_channel(this._chid)
+      if (ccCode !== CommonState.ECA_NORMAL) {
+        throw new Error(message(ccCode))
+      }
+    }
+    await pend()
     this._chid = null
   }
 

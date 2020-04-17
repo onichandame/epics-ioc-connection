@@ -44,6 +44,9 @@ export type GetReturnState=
   | CommonState.ECA_NORDACCESS
   | CommonState.ECA_ALLOCMEM
   | CommonState.ECA_DISCONN
+export type ClearChannelState=
+  | CommonState.ECA_NORMAL
+  | CommonState.ECA_BADCHID
 
 export const ReturnState = {
   ECA_IODONE: 339,
