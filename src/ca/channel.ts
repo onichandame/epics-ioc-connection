@@ -271,7 +271,7 @@ export class Channel extends EventEmitter {
     this._chid = null
   }
 
-  public get ({ fieldType = this._field_type }: GetOption): Promise<string|string[]> {
+  public get ({ fieldType = this._field_type }: GetOption): Promise<Value> {
     return new Promise((resolve, reject) => {
       const getCallbackPtr = Callback('void', [evargs_t], ({ status, dbr, type }: CallbackArgs) => {
         if (status !== CommonState.ECA_NORMAL) {
