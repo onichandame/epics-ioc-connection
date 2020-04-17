@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { Type, RefBuffer, deref, refType, types, readCString, reinterpret } from 'ref-napi'
-import { ArrayType } from 'ref-array-napi'
+import { RefBuffer, deref, refType, types, readCString, reinterpret } from 'ref-napi'
 import Struct from 'ref-struct-napi'
 import { Library, Callback } from 'ffi-napi'
 import { EventEmitter } from 'events'
@@ -13,8 +12,7 @@ import {
   PutError
 } from './error'
 import {
-  EpicsType,
-  FieldType,
+  DataType,
   ConState,
   CommonState,
   State,
@@ -27,14 +25,6 @@ import {
   GetReturnState,
   ClearChannelState
 } from './enum'
-
-type ConnectOption={
-  timeout?: number;
-}
-
-type GetOption={
-  fieldType?: FieldType;
-}
 
 type CallbackArgs={
   usr: RefBuffer;
@@ -134,9 +124,9 @@ const evargs_t = Struct({
 })
 
 export class Channel extends EventEmitter {
-  private _field_type: FieldType
   private _count: number
   //  private _monitor_callback_ptr: Callback | undefined
+  private _field_type: DataType;
   private _monitor_event_id_ptr: RefBuffer | undefined
   private _callback_ptrs: RefBuffer[]
   private _connection_state_change_ptr: RefBuffer| undefined
@@ -144,57 +134,33 @@ export class Channel extends EventEmitter {
 
   constructor (private _pvname: string) {
     super()
-    this._field_type = FieldType.DBF_NO_ACCESS
     this._count = 0
     this._callback_ptrs = []
     this._chid = null
+    this._field_type = DataType.NO_ACCESS
   }
 
-  private epicsTypeToRefType (etype: EpicsType): Type {
-    switch (etype) {
-      case EpicsType.STRING:
-        return types.CString
-      case EpicsType.LONG:
-      case EpicsType.ENUM:
-      case EpicsType.INT:
-      case EpicsType.SHORT:
-        return types.int
-      case EpicsType.FLOAT:
-        return types.float
-      case EpicsType.CHAR:
-        return types.char
-      case EpicsType.DOUBLE:
-        return types.double
-      default:
-        return types.CString
+  private parseValue (buf: RefBuffer, type: DataType, count: number): Value {
+    const raw: string[] = []
+    const bufRef = reinterpret(buf, count * MAX_STRING_SIZE)
+    for (let i = 0; i < count; i++) {
+      raw.push(readCString(bufRef, i * MAX_STRING_SIZE))
     }
-  }
-
-  private parseValue (buf: RefBuffer, dbrType: EpicsType, count: number): Value {
-    let result: Value = []
-    if (dbrType === EpicsType.STRING) {
-      const bufRef = reinterpret(buf, count * MAX_STRING_SIZE)
-      for (let i = 0; i < count; i++) {
-        result.push(readCString(bufRef, i * MAX_STRING_SIZE))
-      }
-    } else {
-      let GetArrayType: ArrayType<string|number>
-      switch (this.epicsTypeToRefType(dbrType)) {
-        case types.long:
-        case types.int:
-        case types.short:
-        case types.float:
-          GetArrayType = ArrayType<number>(this.epicsTypeToRefType(dbrType))
-          break
-        case types.CString:
-        case types.char:
-        default:
-          GetArrayType = ArrayType<string>(this.epicsTypeToRefType(dbrType))
-          break
-      }
-      const array = new GetArrayType(buf)
-      result.length = count
-      result = array.toArray()
+    let result: string[] | number[] = Array(raw.length)
+    switch (type) {
+      case DataType.NO_ACCESS:
+        return []
+      case DataType.INT:
+      case DataType.ENUM:
+      case DataType.SHORT:
+        raw.forEach((item, index) => {
+          result[index] = parseInt(item)
+        })
+        break
+      case DataType.STRING:
+      case DataType.CHAR:
+      default:
+        result = raw
     }
     if (count === 1) {
       return result[0]
@@ -214,7 +180,7 @@ export class Channel extends EventEmitter {
     return this.state === ConState.CS_CONN
   }
 
-  public connect ({ timeout = 2000 }: ConnectOption): Promise<void> {
+  public connect ({ timeout = 2000 } = {}): Promise<void> {
     return new Promise((resolve, reject) => {
       const chidPtr: RefBuffer = Buffer.alloc(chanId.size)
       chidPtr.type = chanId
@@ -225,8 +191,8 @@ export class Channel extends EventEmitter {
       const priority = 0
 
       this._connection_state_change_ptr = new Callback('void', ['pointer', 'long'], (_: number, ev: CAConState) => {
-        this._field_type = libca.ca_field_type(this._chid)
         this._count = libca.ca_element_count(this._chid)
+        this._field_type = libca.ca_field_type(this._chid)
         this.emit('connection', ev)
         if (firstCallback) {
           firstCallback = false
@@ -271,9 +237,9 @@ export class Channel extends EventEmitter {
     this._chid = null
   }
 
-  public get ({ fieldType = this._field_type }: GetOption): Promise<Value> {
+  public get ({ type = this._field_type } = {}): Promise<Value> {
     return new Promise((resolve, reject) => {
-      const getCallbackPtr = Callback('void', [evargs_t], ({ status, dbr, type }: CallbackArgs) => {
+      const getCallbackPtr = Callback('void', [evargs_t], ({ status, dbr }: CallbackArgs) => {
         if (status !== CommonState.ECA_NORMAL) {
           return reject(new Error(message(status)))
         }
@@ -282,11 +248,14 @@ export class Channel extends EventEmitter {
       })
       this._callback_ptrs.push(getCallbackPtr)
       const usrArg = null
-      const getCode: GetReturnState = libca.ca_array_get_callback(fieldType, this._count, this._chid, getCallbackPtr, usrArg)
+      const getCode: GetReturnState = libca.ca_array_get_callback(DataType.STRING, this._count, this._chid, getCallbackPtr, usrArg)
       if (getCode !== CommonState.ECA_NORMAL) {
         return reject(new Error(message(getCode)))
       }
       pend()
     })
+  }
+
+  public put (value: Value): Promise<void> {
   }
 }

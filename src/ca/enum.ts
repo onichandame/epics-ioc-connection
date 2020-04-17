@@ -1,4 +1,3 @@
-import { types, Type } from 'ref-napi'
 // state code
 export enum CommonState{
   ECA_NORMAL = 1,
@@ -76,19 +75,7 @@ export const mask = {
   DBE_PROPERTY: 8
 }
 
-export enum FieldType{
-  DBF_STRING,
-  DBF_INT,
-  DBF_SHORT,
-  DBF_FLOAT,
-  DBF_ENUM,
-  DBF_CHAR,
-  DBF_LONG,
-  DBF_DOUBLE,
-  DBF_NO_ACCESS,
-}
-
-export enum EpicsType {
+export enum DataType{
   STRING,
   INT,
   SHORT,
@@ -97,41 +84,7 @@ export enum EpicsType {
   CHAR,
   LONG,
   DOUBLE,
-  TIME_STRING,
-  TIME_INT,
-  TIME_SHORT,
-  TIME_FLOAT,
-  TIME_ENUM,
-  TIME_CHAR,
-  TIME_LONG,
-  TIME_DOUBLE,
-  CTRL_STRING,
-  CTRL_INT,
-  CTRL_SHORT,
-  CTRL_FLOAT,
-  CTRL_ENUM,
-  CTRL_CHAR,
-  CTRL_LONG,
-  CTRL_DOUBLE,
+  NO_ACCESS,
 }
 
-export const epicsTypeToRefType = (etype: EpicsType): Type => {
-  switch (etype) {
-    case EpicsType.STRING:
-      return types.CString
-    case EpicsType.LONG:
-    case EpicsType.ENUM:
-    case EpicsType.INT:
-    case EpicsType.SHORT:
-      return types.int
-    case EpicsType.FLOAT:
-      return types.float
-    case EpicsType.CHAR:
-      return types.char
-    case EpicsType.DOUBLE:
-      return types.double
-    default:
-      return types.CString
-  }
-}
 export type State=number

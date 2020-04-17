@@ -5,7 +5,7 @@
 
 import ref = require('ref-napi');
 
-interface ArrayType<T> extends ref.Type {
+export interface ArrayType<T> extends ref.Type {
     BYTES_PER_ELEMENT: number;
     fixedLength: number;
     /** The reference to the base type. */
@@ -52,9 +52,11 @@ interface ArrayType<T> extends ref.Type {
  * The returned constructor's API is highly influenced by the WebGL
  * TypedArray API.
  */
-export const ArrayType: {
+export const Array: {
     new <T>(type: ref.Type, length?: number): ArrayType<T>;
     new <T>(type: string, length?: number): ArrayType<T>;
     <T>(type: ref.Type, length?: number): ArrayType<T>;
     <T>(type: string, length?: number): ArrayType<T>;
 }
+
+export default Array
