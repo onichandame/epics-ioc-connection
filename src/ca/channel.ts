@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { RefBuffer, deref, refType, types, writeCString, readCString, reinterpret } from 'ref-napi'
+import { alloc, RefBuffer, deref, refType, types, writeCString, readCString, reinterpret } from 'ref-napi'
 import Struct from 'ref-struct-napi'
 import { Library, Callback } from 'ffi-napi'
 import { EventEmitter } from 'events'
@@ -12,6 +12,7 @@ import {
   PutError
 } from './error'
 import {
+  Mask,
   DataType,
   ConState,
   CommonState,
@@ -22,6 +23,7 @@ import {
   PendEventReturnState,
   CreateChannelReturnState,
   ClearSubscriptionReturnState,
+  CreateSubscriptionReturnState,
   GetReturnState,
   ClearChannelState
 } from './enum'
@@ -217,6 +219,7 @@ export class Channel extends EventEmitter {
         reject(ConError)
       }
       setTimeout(() => {
+        console.log('hi')
         if (this.state === ConState.CS_NEVER_CONN) {
           firstCallback = false
           reject(ConError)
@@ -275,11 +278,28 @@ export class Channel extends EventEmitter {
       const buf: RefBuffer = stringArrayToBuffer(value)
       const usrArg = null
       const apCode = libca.ca_array_put_callback(DataType.STRING, count, this._chid, buf, putCallbackPtr, usrArg)
-      pend().then(() => {
-        if (apCode !== CommonState.ECA_NORMAL) {
-          reject(PutError)
-        }
+      if (apCode !== CommonState.ECA_NORMAL) {
+        reject(PutError)
+      }
+      pend()
+    })
+  }
+
+  public monitor ({ type = this._field_type } = {}): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this._monitor_event_id_ptr = alloc(types.size_t)
+      const monitorCallbackPtr = Callback('void', [evargs_t], ({ dbr }: CallbackArgs) => {
+        const value = this.parseValue(dbr, type, this._count)
+        this.emit('value', value)
       })
+      const usrArg = null
+      const csCode: CreateSubscriptionReturnState = libca.ca_create_subscription(DataType.STRING, this._count, this._chid, Mask.DBE_VALUE, monitorCallbackPtr, usrArg, this._monitor_event_id_ptr)
+      if (csCode === CommonState.ECA_NORMAL) {
+        resolve()
+      } else {
+        reject(new Error(message(csCode)))
+      }
+      pend()
     })
   }
 }

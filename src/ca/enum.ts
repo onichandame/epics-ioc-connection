@@ -11,7 +11,8 @@ export enum CommonState{
   ECA_BADCOUNT=196,
   ECA_GETFAIL=152,
   ECA_NORDACCESS=368,
-  ECA_DISCONN=192
+  ECA_DISCONN=192,
+  ECA_ADDFAIL=168
 }
 
 // state codes returned by individual functions
@@ -46,6 +47,12 @@ export type GetReturnState=
 export type ClearChannelState=
   | CommonState.ECA_NORMAL
   | CommonState.ECA_BADCHID
+export type CreateSubscriptionReturnState=
+  | CommonState.ECA_NORMAL
+  | CommonState.ECA_BADCHID
+  | CommonState.ECA_BADTYPE
+  | CommonState.ECA_ALLOCMEM
+  | CommonState.ECA_ADDFAIL
 
 export enum ConState {
   CS_NEVER_CONN,
@@ -68,11 +75,11 @@ export const state = {
   CS_CLOSED: 3,
   CS_NEVER_SEARCH: 4
 }
-export const mask = {
-  DBE_VALUE: 1,
-  DBE_LOG: 2,
-  DBE_ALARM: 4,
-  DBE_PROPERTY: 8
+export enum Mask {
+  DBE_VALUE= 1,
+  DBE_LOG= 2,
+  DBE_ALARM= 4,
+  DBE_PROPERTY= 8
 }
 
 export enum DataType{

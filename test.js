@@ -5,8 +5,8 @@ const channel = new Channel('xiaoHost:ai1');
 (async () => {
   try {
     await channel.connect()
-    console.log(await channel.get())
-    await channel.disconnect()
+    await channel.monitor()
+    channel.on('value', data => console.log(data))
   } catch (e) {
     console.log(e)
   }
