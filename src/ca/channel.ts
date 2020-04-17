@@ -18,7 +18,8 @@ import {
   ConState,
   CommonState,
   State,
-  // ContextReturnState,
+  CAConState,
+  ContextReturnState,
   PendIoReturnState,
   PendEventReturnState,
   CreateChannelReturnState,
@@ -85,11 +86,15 @@ const libca = Library(LIBCA_PATH, {
   ca_clear_channel: ['int', [chanId]]
 })
 
-// const getContext = (): ContextReturnState => libca.ca_context_create(1) // may be messing threads here
-
-// const context = getContext()
-
 const message = (code: State): string => libca.ca_message(code)
+
+const getContext = (): ContextReturnState => libca.ca_context_create(1) // may be messing threads here
+
+const ccCode = getContext()
+
+if (ccCode !== CommonState.ECA_NORMAL) {
+  throw new Error(message(ccCode))
+}
 
 const pend = (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -171,40 +176,43 @@ export class Channel extends EventEmitter {
     return this.state === ConState.CS_CONN
   }
 
-  public async connect ({ timeout = 2000 }: ConnectOption): Promise<void> {
-    const chidPtr: RefBuffer = Buffer.alloc(chanId.size)
-    chidPtr.type = chanId
-    chidPtr.writeBigInt64LE(BigInt(0), 0)
+  public connect ({ timeout = 2000 }: ConnectOption): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const chidPtr: RefBuffer = Buffer.alloc(chanId.size)
+      chidPtr.type = chanId
+      chidPtr.writeBigInt64LE(BigInt(0), 0)
 
-    let firstCallback = true
-    const userDataPtr = null
-    const priority = 0
+      let firstCallback = true
+      const userDataPtr = null
+      const priority = 0
 
-    this._connection_state_change_ptr = new Callback('void', ['pointer', 'long'], (_: number, ev: number) => {
-      this._field_type = libca.ca_field_type(this._chid)
-      this._count = libca.ca_element_count(this._chid)
-      this.emit('connection', ev)
-      if (firstCallback) {
-        firstCallback = false
-        if (this.state !== ConState.CS_CONN) {
-          throw ConError
+      this._connection_state_change_ptr = new Callback('void', ['pointer', 'long'], (_: number, ev: CAConState) => {
+        this._field_type = libca.ca_field_type(this._chid)
+        this._count = libca.ca_element_count(this._chid)
+        this.emit('connection', ev)
+        if (firstCallback) {
+          firstCallback = false
+          if (this.state === ConState.CS_CONN) {
+            resolve()
+          } else {
+            reject(ConError)
+          }
         }
-      }
-    })
-    const caCode: CreateChannelReturnState = libca.ca_create_channel(this._pvname, this._connection_state_change_ptr, userDataPtr, priority, chidPtr)
-    console.log(typeof deref(chidPtr))
-    await pend()
-    this._chid = deref(chidPtr)
-    if (caCode !== CommonState.ECA_NORMAL) {
-      firstCallback = false
-      throw ConError
-    }
-    setTimeout(() => {
-      if (this.state === ConState.CS_NEVER_CONN) {
+      })
+      const caCode: CreateChannelReturnState = libca.ca_create_channel(this._pvname, this._connection_state_change_ptr, userDataPtr, priority, chidPtr)
+      pend()
+      this._chid = deref(chidPtr)
+      if (caCode !== CommonState.ECA_NORMAL) {
         firstCallback = false
-        throw ConError
+        reject(ConError)
       }
-    }, timeout)
+      setTimeout(() => {
+        if (this.state === ConState.CS_NEVER_CONN) {
+          firstCallback = false
+          reject(ConError)
+        }
+      }, timeout)
+    })
   }
 
   public async disconnect (): Promise<void> {
@@ -231,8 +239,7 @@ export class Channel extends EventEmitter {
         if (status !== CommonState.ECA_NORMAL) {
           return reject(new Error(message(status)))
         }
-        const value = coerceBufferToStringOrArray(dbr, type, this._count)
-        resolve(value)
+        resolve(coerceBufferToStringOrArray(dbr, type, this._count))
         this._callback_ptrs.splice(this._callback_ptrs.indexOf(getCallbackPtr), 1)
       })
       this._callback_ptrs.push(getCallbackPtr)
@@ -241,6 +248,7 @@ export class Channel extends EventEmitter {
       if (getCode !== CommonState.ECA_NORMAL) {
         return reject(new Error(message(getCode)))
       }
+      pend()
     })
   }
 }

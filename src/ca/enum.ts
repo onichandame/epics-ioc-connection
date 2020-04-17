@@ -48,16 +48,18 @@ export type ClearChannelState=
   | CommonState.ECA_NORMAL
   | CommonState.ECA_BADCHID
 
-export const ReturnState = {
-  ECA_IODONE: 339,
-  ECA_ISATTACHED: 424
-}
 export enum ConState {
   CS_NEVER_CONN,
   CS_PREV_CONN,
   CS_CONN,
   CS_CLOSED
 }
+
+export enum CAConState{
+  CA_OP_CONN_UP=6,
+  CA_OP_CONN_DOWN=7
+}
+
 export const state = {
   OP_CONN_UP: 6,
   OP_CONN_DOWN: 7,
