@@ -255,7 +255,4 @@ export class Channel extends EventEmitter {
       pend()
     })
   }
-
-  public put (value: Value): Promise<void> {
-  }
 }
