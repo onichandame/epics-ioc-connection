@@ -21,11 +21,6 @@ export interface Type {
     alignment?: number;
 }
 
-export interface RefBuffer extends Buffer{
-  type?: Type;
-  deref?(): any;
-}
-
 /** A Buffer that references the C NULL pointer. */
 export declare const NULL: Buffer
 /** A pointer-sized buffer pointing to NULL. */
@@ -208,4 +203,11 @@ export declare const types: {
     size_t: Type;
     uint32: Type;
     short: Type;
+}
+
+declare global {
+  interface Buffer{
+    type: Type;
+    deref: typeof deref;
+  }
 }

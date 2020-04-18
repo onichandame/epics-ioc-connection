@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { alloc, RefBuffer, deref, refType, types, writeCString, readCString, reinterpret } from 'ref-napi'
+import { alloc, deref, refType, types, writeCString, readCString, reinterpret } from 'ref-napi'
 import Struct from 'ref-struct-napi'
 import { Library, Callback } from 'ffi-napi'
 import { EventEmitter } from 'events'
@@ -29,15 +29,15 @@ import {
 } from './enum'
 
 type CallbackArgs={
-  usr: RefBuffer;
+  usr: Buffer;
   chid: number;
   type: number;
   count: number;
-  dbr: RefBuffer;
+  dbr: Buffer;
   status: State;
 }
 
-type Value=
+export type Value=
   | number
   | string
   | Array<number|string>
@@ -107,7 +107,7 @@ const pend = (): Promise<void> => {
   })
 }
 
-const stringArrayToBuffer = (raw: Value): RefBuffer => {
+const stringArrayToBuffer = (raw: Value): Buffer => {
   const count = Array.isArray(raw) ? raw.length : 1
   const array: string[] = Array(count)
   if (Array.isArray(raw)) {
@@ -135,9 +135,9 @@ export class Channel extends EventEmitter {
   private _count: number
   //  private _monitor_callback_ptr: Callback | undefined
   private _field_type: DataType;
-  private _monitor_event_id_ptr: RefBuffer | undefined
-  private _callback_ptrs: RefBuffer[]
-  private _connection_state_change_ptr: RefBuffer| undefined
+  private _monitor_event_id_ptr: Buffer | undefined
+  private _callback_ptrs: Buffer[]
+  private _connection_state_change_ptr: Buffer| undefined
   private _chid: number|null
 
   constructor (private _pvname: string) {
@@ -148,7 +148,7 @@ export class Channel extends EventEmitter {
     this._field_type = DataType.NO_ACCESS
   }
 
-  private parseValue (buf: RefBuffer, type: DataType, count: number): Value {
+  private parseValue (buf: Buffer, type: DataType, count: number): Value {
     const raw: string[] = []
     const bufRef = reinterpret(buf, count * MAX_STRING_SIZE)
     for (let i = 0; i < count; i++) {
@@ -190,7 +190,7 @@ export class Channel extends EventEmitter {
 
   public connect ({ timeout = 2000 } = {}): Promise<void> {
     return new Promise((resolve, reject) => {
-      const chidPtr: RefBuffer = Buffer.alloc(chanId.size)
+      const chidPtr: Buffer = Buffer.alloc(chanId.size)
       chidPtr.type = chanId
       chidPtr.writeBigInt64LE(BigInt(0), 0)
 
@@ -274,7 +274,7 @@ export class Channel extends EventEmitter {
         }
       })
       const count = Array.isArray(value) ? value.length : 1
-      const buf: RefBuffer = stringArrayToBuffer(value)
+      const buf: Buffer = stringArrayToBuffer(value)
       const usrArg = null
       const apCode = libca.ca_array_put_callback(DataType.STRING, count, this._chid, buf, putCallbackPtr, usrArg)
       if (apCode !== CommonState.ECA_NORMAL) {

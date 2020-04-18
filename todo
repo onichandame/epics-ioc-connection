@@ -1,6 +1,0 @@
-test publish
-separate types to DefinitelyTyped
-write unit test
-test caget/caput/camonitor
-implement ca using napi
-implement ca using pure ts

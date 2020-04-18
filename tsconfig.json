@@ -1,6 +1,7 @@
 {
-  "include": ["src", "types"],
+  "include": ["src"],
   "compilerOptions": {
+    "noEmit":false,
     "target": "ES6",
     "module": "esnext",
     "lib": ["dom", "esnext"],
@@ -22,12 +23,9 @@
     "moduleResolution": "node",
     "baseUrl": "./",
     "paths": {
-      "*": ["src/types/*", "node_modules/*"]
+      "*": ["src/types/*"]
     },
     "jsx": "react",
     "esModuleInterop": true
-  },
-  "exclude":[
-    "src/types"
-  ]
+  }
 }

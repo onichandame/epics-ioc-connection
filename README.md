@@ -1,27 +1,78 @@
-# TSDX Bootstrap
+# EPICS IOC Connection
 
-This project was bootstrapped with [TSDX](https://github.com/jaredpalmer/tsdx).
+Forked from [this repo](https://github.com/RobbieClarken/node-epics) but does not have the same signature with the original package.
 
-## Local Development
+This package aims to provide a convenient interface for JS/TS codes to communicate with the EPICS IOCs.
 
-Below is a list of commands you will probably find useful.
+Shipped with types
 
-### `npm start` or `yarn start`
+# Author
 
-Runs the project in development/watch mode. Your project will be rebuilt upon changes. TSDX has a special logger for you convenience. Error messages are pretty printed and formatted for compatibility VS Code's Problems tab.
+[onichandame](https://github.com/onichandame)
 
-<img src="https://user-images.githubusercontent.com/4060187/52168303-574d3a00-26f6-11e9-9f3b-71dbec9ebfcb.gif" width="600" />
+# Guide
 
-Your library will be rebuilt if you make edits.
+## Pre-requisite
 
-### `npm run build` or `yarn build`
+You are assumed to be familiar with the EPICS framework. If not, check the official site and the [API docs](https://epics.anl.gov/base/R3-14/10-docs/CAref.html).
 
-Bundles the package to the `dist` folder.
-The package is optimized and bundled with Rollup into multiple formats (CommonJS, UMD, and ES Module).
+This package is not a traditional JS package which only depends on the JS runtime due to the complexity of the ChannelAccess protocol. It requires the following conditions being met:
 
-<img src="https://user-images.githubusercontent.com/4060187/52168322-a98e5b00-26f6-11e9-8cf6-222d716b75ef.gif" width="600" />
+1. an installation of epics base. The development of this package is based on EPICS 3.14.12.8
+2. one of the below env variables set(Check the meaning of them in the official installation guide of EPICS)
 
-### `npm test` or `yarn test`
+- LIBCA_PATH
+- EPICS_BASE and EPICS_HOST_ARCH
 
-Runs the test watcher (Jest) in an interactive mode.
-By default, runs tests related to files changed since the last commit.
+## Installation
+
+```bash
+yarn add epics-ioc-connection
+# or
+npm i epics-ioc-connection
+```
+
+## Usage
+
+```typescript
+import { CA } from 'epics-ioc-connection'
+
+(async () => {
+  // self-managed channel
+  const channel = await CA.connect('rootHost:ai1')
+    // get once
+  channel.get()
+    .then(value => console.log(value))
+    // put once
+    .then(channel.put(4))
+    .then(() => console.log('pushed value to channel'))
+    // get new value when value changes
+    .then(channel.monitor)
+    .then(() => {
+      channel.on('value', value => console.log(value))
+    })
+    // disconnect
+  setTimeout(channel.disconnect, 5000)
+
+  // managed methods
+    // get once
+  console.log(await CA.get('rootHost:ai1'))
+    // put once
+  try {
+    await CA.put('rootHost:ai1', 3)
+  } catch(e) {
+    console.error(`put failed due to ${e}`)
+  }
+```
+
+# LICENSE
+
+[MIT](https://opensource.org/licenses/MIT)
+
+# Roadmap
+
+- separate types of dependencies to DefinitelyTyped
+- test caget/caput/camonitor
+- write unit test
+- implement ca using napi
+- implement ca using pure ts
