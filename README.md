@@ -73,6 +73,6 @@ import { CA } from 'epics-ioc-connection'
 
 - separate types of dependencies to DefinitelyTyped
 - test caget/caput/camonitor
-- write unit test
 - implement ca using napi
 - implement ca using pure ts
+- write unit test
