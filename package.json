@@ -13,7 +13,7 @@
     "start": "tsdx watch",
     "build": "tsdx build",
     "test": "tsdx test",
-    "lint": "eslint src/**/*.ts",
+    "lint": "eslint --ext .ts src",
     "prepare": "tsdx build"
   },
   "peerDependencies": {},

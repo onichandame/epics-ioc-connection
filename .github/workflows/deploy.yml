@@ -15,24 +15,8 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 12.x
-
-      - name: Use cached node_modules
-        uses: actions/cache@v1
-        with:
-          path: node_modules
-          key: nodeModules-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            nodeModules-
-
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-        env:
-          CI: true
-
-      - name: Build
-        run: yarn build
-        env:
-          CI: true
 
       - name: Publish
         uses: pascalgn/npm-publish-action@51fdb4531e99aac1873764ef7271af448dc42ab4
