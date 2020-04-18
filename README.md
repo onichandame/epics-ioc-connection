@@ -75,4 +75,4 @@ import { CA } from 'epics-ioc-connection'
 - test caget/caput/camonitor
 - implement ca using napi
 - implement ca using pure ts
-- write unit test
+- write unit test(after previous step)
