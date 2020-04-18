@@ -63,6 +63,7 @@ import { CA } from 'epics-ioc-connection'
   } catch(e) {
     console.error(`put failed due to ${e}`)
   }
+})()
 ```
 
 # LICENSE
