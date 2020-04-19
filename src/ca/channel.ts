@@ -86,7 +86,8 @@ const libca = Library(LIBCA_PATH, {
 
 const message = (code: State): string => libca.ca_message(code)
 
-const getContext = (): ContextReturnState => libca.ca_context_create(1) // may be messing threads here
+// create context here. need to destroy in the future versions
+const getContext = (): ContextReturnState => libca.ca_context_create(1)
 
 const ccCode = getContext()
 
@@ -94,18 +95,14 @@ if (ccCode !== CommonState.ECA_NORMAL) {
   throw new Error(message(ccCode))
 }
 
-const pend = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    const eventCode: PendEventReturnState = libca.ca_pend_event(pendDelay)
-    const ioCode: PendIoReturnState = libca.ca_pend_io(pendDelay)
-    if (eventCode !== CommonState.ECA_TIMEOUT) {
-      reject(PutError)
-    } else if (ioCode !== CommonState.ECA_NORMAL) {
-      reject(GetError)
-    } else {
-      resolve()
-    }
-  })
+const pend = (): void => {
+  const eventCode: PendEventReturnState = libca.ca_pend_event(pendDelay)
+  const ioCode: PendIoReturnState = libca.ca_pend_io(pendDelay)
+  if (eventCode !== CommonState.ECA_TIMEOUT) {
+    throw PutError
+  } else if (ioCode !== CommonState.ECA_NORMAL) {
+    throw GetError
+  }
 }
 
 const stringArrayToBuffer = (raw: Value): Buffer => {
@@ -238,7 +235,7 @@ export class Channel extends EventEmitter {
       console.log(`state before ${this.state}`)
       const csCode: ClearSubscriptionReturnState = libca.ca_clear_subscription(deref(this._monitor_event_id_ptr))
       console.log(`state after ${this.state}`)
-      await pend()
+      pend()
       if (csCode !== CommonState.ECA_NORMAL) {
         throw message(csCode)
       }
@@ -246,12 +243,12 @@ export class Channel extends EventEmitter {
     if (this._chid) {
       console.log(`state before ${this.state}`)
       const ccCode: ClearChannelState = libca.ca_clear_channel(this._chid)
+      pend()
       console.log(`state after ${this.state}`)
       if (ccCode !== CommonState.ECA_NORMAL) {
         throw new Error(message(ccCode))
       }
     }
-    await pend()
     this._chid = null
   }
 
