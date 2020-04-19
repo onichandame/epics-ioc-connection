@@ -2,8 +2,10 @@ import { connect } from './connect'
 import { Channel } from './channel'
 
 export const get = async (pvname: string): ReturnType<Channel['get']> => {
-  const ca = await connect(pvname)
-  const value = await ca.get()
-  await ca.disconnect()
+  const channel = await connect(pvname)
+  const value = await channel.get()
+  console.log('disconnecting')
+  await channel.disconnect()
+  console.log('disconnected')
   return value
 }

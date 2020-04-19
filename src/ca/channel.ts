@@ -64,6 +64,7 @@ const chtype = types.long
 const libca = Library(LIBCA_PATH, {
   ca_message: ['string', ['int']],
   ca_context_create: ['int', ['int']],
+  ca_context_destroy: ['int', []],
   ca_current_context: ['int', []],
   ca_pend_event: ['int', ['float']],
   ca_pend_io: ['int', ['float']],
@@ -135,9 +136,10 @@ export class Channel extends EventEmitter {
   private _count: number
   //  private _monitor_callback_ptr: Callback | undefined
   private _field_type: DataType;
-  private _monitor_event_id_ptr: Buffer | undefined
+  private _monitor_event_id_ptr: Buffer |null
+  private _monitor_callback_ptr: Buffer | undefined
   private _callback_ptrs: Buffer[]
-  private _connection_state_change_ptr: Buffer| undefined
+  private _connection_state_change_ptr: Buffer | null
   private _chid: number|null
 
   constructor (private _pvname: string) {
@@ -145,7 +147,9 @@ export class Channel extends EventEmitter {
     this._count = 0
     this._callback_ptrs = []
     this._chid = null
+    this._monitor_event_id_ptr = null
     this._field_type = DataType.NO_ACCESS
+    this._connection_state_change_ptr = null
   }
 
   private parseValue (buf: Buffer, type: DataType, count: number): Value {
@@ -198,7 +202,7 @@ export class Channel extends EventEmitter {
       const userDataPtr = null
       const priority = 0
 
-      this._connection_state_change_ptr = new Callback('void', ['pointer', 'long'], (_: number, ev: CAConState) => {
+      this._connection_state_change_ptr = new Callback('int', ['pointer', 'long'], (_: number, ev: CAConState) => {
         this._count = libca.ca_element_count(this._chid)
         this._field_type = libca.ca_field_type(this._chid)
         this.emit('connection', ev)
@@ -210,6 +214,7 @@ export class Channel extends EventEmitter {
             reject(ConError)
           }
         }
+        return 0
       })
       const caCode: CreateChannelReturnState = libca.ca_create_channel(this._pvname, this._connection_state_change_ptr, userDataPtr, priority, chidPtr)
       pend()
@@ -221,22 +226,27 @@ export class Channel extends EventEmitter {
       setTimeout(() => {
         if (this.state === ConState.CS_NEVER_CONN) {
           firstCallback = false
-          reject(ConError)
+          throw ConError
         }
       }, timeout)
     })
   }
 
   public async disconnect (): Promise<void> {
-    if (typeof this._monitor_event_id_ptr !== 'undefined') {
+    if (this._monitor_event_id_ptr !== null) {
+      console.log('clearing monitor')
+      console.log(`state before ${this.state}`)
       const csCode: ClearSubscriptionReturnState = libca.ca_clear_subscription(deref(this._monitor_event_id_ptr))
+      console.log(`state after ${this.state}`)
       await pend()
       if (csCode !== CommonState.ECA_NORMAL) {
         throw message(csCode)
       }
     }
     if (this._chid) {
+      console.log(`state before ${this.state}`)
       const ccCode: ClearChannelState = libca.ca_clear_channel(this._chid)
+      console.log(`state after ${this.state}`)
       if (ccCode !== CommonState.ECA_NORMAL) {
         throw new Error(message(ccCode))
       }
@@ -287,12 +297,12 @@ export class Channel extends EventEmitter {
   public monitor ({ type = this._field_type } = {}): Promise<void> {
     return new Promise((resolve, reject) => {
       this._monitor_event_id_ptr = alloc(types.size_t)
-      const monitorCallbackPtr = Callback('void', [evargs_t], ({ dbr }: CallbackArgs) => {
+      this._monitor_callback_ptr = Callback('void', [evargs_t], ({ dbr }: CallbackArgs) => {
         const value = this.parseValue(dbr, type, this._count)
         this.emit('value', value)
       })
       const usrArg = null
-      const csCode: CreateSubscriptionReturnState = libca.ca_create_subscription(DataType.STRING, this._count, this._chid, Mask.DBE_VALUE, monitorCallbackPtr, usrArg, this._monitor_event_id_ptr)
+      const csCode: CreateSubscriptionReturnState = libca.ca_create_subscription(DataType.STRING, this._count, this._chid, Mask.DBE_VALUE, this._monitor_callback_ptr, usrArg, this._monitor_event_id_ptr)
       if (csCode === CommonState.ECA_NORMAL) {
         resolve()
       } else {
