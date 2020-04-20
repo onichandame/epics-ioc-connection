@@ -19,10 +19,9 @@ You are assumed to be familiar with the EPICS framework. If not, check the offic
 This package is not a traditional JS package which only depends on the JS runtime due to the complexity of the ChannelAccess protocol. It requires the following conditions being met:
 
 1. an installation of epics base. The development of this package is based on EPICS 3.14.12.8
-2. one of the below env variables set(Check the meaning of them in the official installation guide of EPICS)
-
-- LIBCA_PATH
-- EPICS_BASE and EPICS_HOST_ARCH
+2. one of the below env variables set(Check the meaning of them in the official installation guide of EPICS). If none is installed, it will fallback to the binaries shipped in `clibs` directory, which will not be guaranteed to work in your environment.
+    - LIBCA_PATH
+    - EPICS_BASE and EPICS_HOST_ARCH
 
 ## Installation
 

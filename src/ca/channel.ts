@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
+import { resolve } from 'app-root-path'
 import { alloc, deref, refType, types, writeCString, readCString, reinterpret } from 'ref-napi'
 import Struct from 'ref-struct-napi'
 import { Library, Callback } from 'ffi-napi'
@@ -42,12 +43,22 @@ export type Value=
   | string
   | Array<number|string>
 
+// use local epics installation
 let LIBCA_PATH = process.env.NODE_EPICS_LIBCA
 if (!LIBCA_PATH) {
   if (process.env.EPICS_BASE && process.env.EPICS_HOST_ARCH) {
     LIBCA_PATH = join(process.env.EPICS_BASE, 'lib', process.env.EPICS_HOST_ARCH, 'libca')
   }
 }
+// use shipped binary
+if (!LIBCA_PATH) {
+  if (process.platform.includes('linux')) {
+    if (process.arch.includes('64')) {
+      LIBCA_PATH = resolve('clibs/linux64/libca')
+    }
+  }
+}
+
 if (!LIBCA_PATH) {
   throw DepError
 }
@@ -131,7 +142,6 @@ const evargs_t = Struct({
 
 export class Channel extends EventEmitter {
   private _count: number
-  //  private _monitor_callback_ptr: Callback | undefined
   private _field_type: DataType;
   private _monitor_event_id_ptr: Buffer |null
   private _monitor_callback_ptr: Buffer | undefined
@@ -199,19 +209,18 @@ export class Channel extends EventEmitter {
       const userDataPtr = null
       const priority = 0
 
-      this._connection_state_change_ptr = new Callback('int', ['pointer', 'long'], (_: number, ev: CAConState) => {
+      this._connection_state_change_ptr = new Callback('void', ['pointer', 'long'], (_: number, ev: CAConState) => {
         this._count = libca.ca_element_count(this._chid)
         this._field_type = libca.ca_field_type(this._chid)
         this.emit('connection', ev)
         if (firstCallback) {
           firstCallback = false
-          if (this.state === ConState.CS_CONN) {
+          if (this.connected) {
             resolve()
           } else {
             reject(ConError)
           }
         }
-        return 0
       })
       const caCode: CreateChannelReturnState = libca.ca_create_channel(this._pvname, this._connection_state_change_ptr, userDataPtr, priority, chidPtr)
       pend()
@@ -223,33 +232,36 @@ export class Channel extends EventEmitter {
       setTimeout(() => {
         if (this.state === ConState.CS_NEVER_CONN) {
           firstCallback = false
-          throw ConError
+          reject(ConError)
         }
       }, timeout)
     })
   }
 
-  public async disconnect (): Promise<void> {
-    if (this._monitor_event_id_ptr !== null) {
-      console.log('clearing monitor')
-      console.log(`state before ${this.state}`)
-      const csCode: ClearSubscriptionReturnState = libca.ca_clear_subscription(deref(this._monitor_event_id_ptr))
-      console.log(`state after ${this.state}`)
-      pend()
-      if (csCode !== CommonState.ECA_NORMAL) {
-        throw message(csCode)
-      }
-    }
-    if (this._chid) {
-      console.log(`state before ${this.state}`)
-      const ccCode: ClearChannelState = libca.ca_clear_channel(this._chid)
-      pend()
-      console.log(`state after ${this.state}`)
-      if (ccCode !== CommonState.ECA_NORMAL) {
-        throw new Error(message(ccCode))
-      }
-    }
-    this._chid = null
+  // a deadlock is seen when calling ca_clear_subscription or ca_clear_channel. Have to wait for a short time to bypass it. Intuitively it seems like a race condition
+  // currently do not know what affects this behaviour, have to read the source code of EPICS which is not easy to do
+  // increase the timeout if a deadlock is seen.
+  public disconnect ({ timeout = 10 } = {}): Promise<void> {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        if (this._monitor_event_id_ptr !== null) {
+          const csCode: ClearSubscriptionReturnState = libca.ca_clear_subscription(deref(this._monitor_event_id_ptr))
+          pend()
+          if (csCode !== CommonState.ECA_NORMAL) {
+            reject(message(csCode))
+          }
+        }
+        if (this._chid) {
+          const ccCode: ClearChannelState = libca.ca_clear_channel(this._chid)
+          pend()
+          if (ccCode !== CommonState.ECA_NORMAL) {
+            reject(new Error(message(ccCode)))
+          }
+        }
+        this._chid = null
+        resolve()
+      }, timeout)
+    })
   }
 
   public get ({ type = this._field_type } = {}): Promise<Value> {
