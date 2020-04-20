@@ -11,4 +11,3 @@ declare global{
 
 global.rootPath = dirname(__dirname)
 process.env.PATH = process.env.PATH + `:${global.rootPath}`
-console.log(global.rootPath)
