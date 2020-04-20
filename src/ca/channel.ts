@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { resolve } from 'app-root-path'
 import { alloc, deref, refType, types, writeCString, readCString, reinterpret } from 'ref-napi'
 import Struct from 'ref-struct-napi'
 import { Library, Callback } from 'ffi-napi'
@@ -54,7 +53,7 @@ if (!LIBCA_PATH) {
 if (!LIBCA_PATH) {
   if (process.platform.includes('linux')) {
     if (process.arch.includes('64')) {
-      LIBCA_PATH = resolve('clibs/linux64/libca')
+      LIBCA_PATH = join(global.rootPath, 'clibs', 'linux64', 'libca')
     }
   }
 }
