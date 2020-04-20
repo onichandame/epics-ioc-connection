@@ -71,6 +71,7 @@ import { CA } from 'epics-ioc-connection'
 
 # Roadmap
 
+- add counter to channel
 - separate types of dependencies to DefinitelyTyped
 - test caget/caput/camonitor
 - implement ca using napi
