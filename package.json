@@ -34,7 +34,6 @@
   "author": "onichandame",
   "module": "dist/epics-base.esm.js",
   "devDependencies": {
-    "@types/app-root-path": "^1.2.4",
     "@types/ffi-napi": "^2.4.1",
     "@types/jest": "^25.2.1",
     "@typescript-eslint/eslint-plugin": "^2.28.0",
@@ -52,7 +51,6 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "app-root-path": "^3.0.0",
     "ffi-napi": "^2.4.7",
     "ref-struct-napi": "^1.1.0"
   }
