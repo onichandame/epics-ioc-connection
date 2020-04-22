@@ -10,4 +10,4 @@ declare global{
 }
 
 global.rootPath = dirname(__dirname)
-process.env.PATH = process.env.PATH + `:${global.rootPath}`
+process.env.PATH += `:${global.rootPath}`
