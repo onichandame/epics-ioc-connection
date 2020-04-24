@@ -8,7 +8,7 @@
     "/clibs"
   ],
   "engines": {
-    "node": "<13"
+    "node": ">10 <=14"
   },
   "scripts": {
     "start": "tsdx watch",
