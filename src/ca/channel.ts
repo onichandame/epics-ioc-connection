@@ -122,6 +122,8 @@ const stringArrayToBuffer = (raw: Value): Buffer => {
     raw.forEach((item, index) => {
       array[index] = item.toString()
     })
+  } else {
+    array[0] = raw.toString()
   }
   const buf = Buffer.alloc(count * MAX_STRING_SIZE)
   for (let i = 0; i < count; i += 1) {
