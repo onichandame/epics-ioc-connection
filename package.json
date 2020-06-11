@@ -14,7 +14,7 @@
     "start": "tsdx watch",
     "build": "tsdx build",
     "test": "tsdx test",
-    "format": "prettier-eslint --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "lint": "yarn format",
     "prepare": "tsdx build"
   },
@@ -31,9 +31,8 @@
   "devDependencies": {
     "@types/ffi-napi": "^2.4.1",
     "@types/jest": "^25.2.1",
-    "eslint": "^6.8.0",
     "husky": "^4.2.3",
-    "prettier-eslint": "9.0.1",
+    "prettier": "^2.0.5",
     "tsdx": "^0.13.1",
     "tslib": "^1.11.1",
     "typescript": "^3.8.3"

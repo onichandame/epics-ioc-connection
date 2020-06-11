@@ -4,10 +4,10 @@ declare global {
   /* eslint-disable-next-line @typescript-eslint/no-namespace */
   namespace NodeJS {
     interface Global {
-      rootPath: string
+      epicsRootPath: string
     }
   }
 }
 
-global.rootPath = dirname(__dirname)
-process.env.PATH += `:${global.rootPath}`
+global.epicsRootPath = dirname(__dirname)
+process.env.PATH += `:${global.epicsRootPath}`

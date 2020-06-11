@@ -58,7 +58,7 @@ if (!LIBCA_PATH) {
 if (!LIBCA_PATH) {
   if (process.platform.includes("linux")) {
     if (process.arch.includes("64")) {
-      LIBCA_PATH = join(global.rootPath, "clibs", "linux64", "libca")
+      LIBCA_PATH = join(global.epicsRootPath, "clibs", "linux64", "libca")
     }
   }
 }
