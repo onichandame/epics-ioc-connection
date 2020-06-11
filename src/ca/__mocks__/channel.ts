@@ -15,5 +15,5 @@ export const Channel = jest.fn().mockImplementation(() => ({
   disconnect: MockDisconnect,
   get: MockGet,
   put: MockPut,
-  monitor: MockMonitor
+  monitor: MockMonitor,
 }))

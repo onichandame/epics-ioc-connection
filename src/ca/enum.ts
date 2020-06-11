@@ -12,7 +12,7 @@ export enum CommonState {
   ECA_GETFAIL = 152,
   ECA_NORDACCESS = 368,
   ECA_DISCONN = 192,
-  ECA_ADDFAIL = 168
+  ECA_ADDFAIL = 168,
 }
 
 // state codes returned by individual functions
@@ -56,12 +56,12 @@ export enum ConState {
   CS_NEVER_CONN,
   CS_PREV_CONN,
   CS_CONN,
-  CS_CLOSED
+  CS_CLOSED,
 }
 
 export enum CAConState {
   CA_OP_CONN_UP = 6,
-  CA_OP_CONN_DOWN = 7
+  CA_OP_CONN_DOWN = 7,
 }
 
 export const state = {
@@ -71,13 +71,13 @@ export const state = {
   CS_PREV_CONN: 1,
   CS_CONN: 2,
   CS_CLOSED: 3,
-  CS_NEVER_SEARCH: 4
+  CS_NEVER_SEARCH: 4,
 }
 export enum Mask {
   DBE_VALUE = 1,
   DBE_LOG = 2,
   DBE_ALARM = 4,
-  DBE_PROPERTY = 8
+  DBE_PROPERTY = 8,
 }
 
 export enum DataType {
@@ -89,7 +89,7 @@ export enum DataType {
   CHAR,
   LONG,
   DOUBLE,
-  NO_ACCESS
+  NO_ACCESS,
 }
 
 export type State = number

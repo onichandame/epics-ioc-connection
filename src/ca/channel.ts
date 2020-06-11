@@ -6,7 +6,7 @@ import {
   types,
   writeCString,
   readCString,
-  reinterpret
+  reinterpret,
 } from "ref-napi"
 import Struct from "ref-struct-napi"
 import { Library, Callback } from "ffi-napi"
@@ -28,7 +28,7 @@ import {
   ClearSubscriptionReturnState,
   CreateSubscriptionReturnState,
   GetReturnState,
-  ClearChannelState
+  ClearChannelState,
 } from "./enum"
 
 type CallbackArgs = {
@@ -86,7 +86,7 @@ const libca = Library(LIBCA_PATH, {
   ca_test_io: ["int", []],
   ca_create_channel: [
     "int",
-    ["string", "pointer", "pointer", "int", "pointer"]
+    ["string", "pointer", "pointer", "int", "pointer"],
   ],
   ca_host_name: ["string", ["long"]],
   ca_field_type: ["short", ["long"]],
@@ -96,18 +96,18 @@ const libca = Library(LIBCA_PATH, {
   ca_array_get: ["int", ["int", "ulong", chanId, "pointer"]],
   ca_array_get_callback: [
     "int",
-    ["int", "ulong", chanId, "pointer", "pointer"]
+    ["int", "ulong", chanId, "pointer", "pointer"],
   ],
   ca_array_put_callback: [
     "int",
-    [chtype, "ulong", chanId, "pointer", "pointer", "pointer"]
+    [chtype, "ulong", chanId, "pointer", "pointer", "pointer"],
   ],
   ca_create_subscription: [
     "int",
-    ["int", "ulong", chanId, "long", "pointer", "pointer", "pointer"]
+    ["int", "ulong", chanId, "long", "pointer", "pointer", "pointer"],
   ],
   ca_clear_subscription: ["int", [evId]],
-  ca_clear_channel: ["int", [chanId]]
+  ca_clear_channel: ["int", [chanId]],
 })
 
 const message = (code: State): string => libca.ca_message(code)
@@ -154,7 +154,7 @@ const evargs_t = Struct({
   type: types.long,
   count: types.long,
   dbr: size_tPtr,
-  status: types.int
+  status: types.int,
 })
 
 export interface Channel {
