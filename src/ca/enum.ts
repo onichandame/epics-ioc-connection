@@ -1,18 +1,18 @@
 // state code
-export enum CommonState{
+export enum CommonState {
   ECA_NORMAL = 1,
   ECA_TIMEOUT = 80,
   ECA_ALLOCMEM = 48,
   ECA_NOTTHREADED = 458,
   ECA_EVDISALLOW = 210,
-  ECA_BADTYPE=114,
-  ECA_STRTOBIG=96,
-  ECA_BADCHID=410,
-  ECA_BADCOUNT=196,
-  ECA_GETFAIL=152,
-  ECA_NORDACCESS=368,
-  ECA_DISCONN=192,
-  ECA_ADDFAIL=168
+  ECA_BADTYPE = 114,
+  ECA_STRTOBIG = 96,
+  ECA_BADCHID = 410,
+  ECA_BADCOUNT = 196,
+  ECA_GETFAIL = 152,
+  ECA_NORDACCESS = 368,
+  ECA_DISCONN = 192,
+  ECA_ADDFAIL = 168
 }
 
 // state codes returned by individual functions
@@ -32,10 +32,10 @@ export type CreateChannelReturnState =
   | CommonState.ECA_BADTYPE
   | CommonState.ECA_STRTOBIG
   | CommonState.ECA_ALLOCMEM
-export type ClearSubscriptionReturnState=
+export type ClearSubscriptionReturnState =
   | CommonState.ECA_NORMAL
   | CommonState.ECA_BADCHID
-export type GetReturnState=
+export type GetReturnState =
   | CommonState.ECA_NORMAL
   | CommonState.ECA_BADTYPE
   | CommonState.ECA_BADCHID
@@ -44,10 +44,8 @@ export type GetReturnState=
   | CommonState.ECA_NORDACCESS
   | CommonState.ECA_ALLOCMEM
   | CommonState.ECA_DISCONN
-export type ClearChannelState=
-  | CommonState.ECA_NORMAL
-  | CommonState.ECA_BADCHID
-export type CreateSubscriptionReturnState=
+export type ClearChannelState = CommonState.ECA_NORMAL | CommonState.ECA_BADCHID
+export type CreateSubscriptionReturnState =
   | CommonState.ECA_NORMAL
   | CommonState.ECA_BADCHID
   | CommonState.ECA_BADTYPE
@@ -61,9 +59,9 @@ export enum ConState {
   CS_CLOSED
 }
 
-export enum CAConState{
-  CA_OP_CONN_UP=6,
-  CA_OP_CONN_DOWN=7
+export enum CAConState {
+  CA_OP_CONN_UP = 6,
+  CA_OP_CONN_DOWN = 7
 }
 
 export const state = {
@@ -76,13 +74,13 @@ export const state = {
   CS_NEVER_SEARCH: 4
 }
 export enum Mask {
-  DBE_VALUE= 1,
-  DBE_LOG= 2,
-  DBE_ALARM= 4,
-  DBE_PROPERTY= 8
+  DBE_VALUE = 1,
+  DBE_LOG = 2,
+  DBE_ALARM = 4,
+  DBE_PROPERTY = 8
 }
 
-export enum DataType{
+export enum DataType {
   STRING,
   INT,
   SHORT,
@@ -91,7 +89,7 @@ export enum DataType{
   CHAR,
   LONG,
   DOUBLE,
-  NO_ACCESS,
+  NO_ACCESS
 }
 
-export type State=number
+export type State = number

@@ -1,9 +1,9 @@
-import { connect } from './connect'
+import { connect } from "./connect"
 
-jest.mock('./channel')
+jest.mock("./channel")
 
-describe('connect', () => {
-  test('connect without throw', async () => {
-    return expect(connect('')).resolves.toBeTruthy()
+describe("connect", () => {
+  test("connect without throw", async () => {
+    return expect(connect("")).resolves.toBeTruthy()
   })
 })

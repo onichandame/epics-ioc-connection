@@ -1,10 +1,10 @@
-import { dirname } from 'path'
+import { dirname } from "path"
 
-declare global{
+declare global {
   /* eslint-disable-next-line @typescript-eslint/no-namespace */
-  namespace NodeJS{
+  namespace NodeJS {
     interface Global {
-      rootPath: string;
+      rootPath: string
     }
   }
 }

@@ -5,7 +5,7 @@
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // TypeScript Version: 2.2
 
-import ref = require('ref-napi');
+import ref = require("ref-napi")
 
 /**
  * This is the `constructor` of the Struct type that gets returned.
@@ -18,43 +18,43 @@ import ref = require('ref-napi');
  * @constructor
  */
 interface StructType extends ref.Type {
-    /** Pass it an existing Buffer instance to use that as the backing buffer. */
-    new (arg: Buffer, data?: {}): any;
-    new (data?: {}): any;
-    /** Pass it an existing Buffer instance to use that as the backing buffer. */
-    (arg: Buffer, data?: {}): any;
-    (data?: {}): any;
+  /** Pass it an existing Buffer instance to use that as the backing buffer. */
+  new (arg: Buffer, data?: {}): any
+  new (data?: {}): any
+  /** Pass it an existing Buffer instance to use that as the backing buffer. */
+  (arg: Buffer, data?: {}): any
+  (data?: {}): any
 
-    fields: { [key: string]: { type: ref.Type } };
+  fields: { [key: string]: { type: ref.Type } }
 
-    /**
-     * Adds a new field to the struct instance with the given name and type.
-     * Note that this function will throw an Error if any instances of the struct
-     * type have already been created, therefore this function must be called at the
-     * beginning, before any instances are created.
-     */
-    defineProperty(name: string, type: ref.Type): void;
+  /**
+   * Adds a new field to the struct instance with the given name and type.
+   * Note that this function will throw an Error if any instances of the struct
+   * type have already been created, therefore this function must be called at the
+   * beginning, before any instances are created.
+   */
+  defineProperty(name: string, type: ref.Type): void
 
-    /**
-     * Adds a new field to the struct instance with the given name and type.
-     * Note that this function will throw an Error if any instances of the struct
-     * type have already been created, therefore this function must be called at the
-     * beginning, before any instances are created.
-     */
-    defineProperty(name: string, type: string): void;
+  /**
+   * Adds a new field to the struct instance with the given name and type.
+   * Note that this function will throw an Error if any instances of the struct
+   * type have already been created, therefore this function must be called at the
+   * beginning, before any instances are created.
+   */
+  defineProperty(name: string, type: string): void
 
-    /**
-     * Custom for struct type instances.
-     * @override
-     */
-    toString(): string;
+  /**
+   * Custom for struct type instances.
+   * @override
+   */
+  toString(): string
 }
 
 /** The struct type meta-constructor. */
 export const Struct: {
-    new (fields?: object, opt?: object): StructType;
-    new (fields?: any[]): StructType;
-    (fields?: object, opt?: object): StructType;
-    (fields?: any[]): StructType;
+  new (fields?: object, opt?: object): StructType
+  new (fields?: any[]): StructType
+  (fields?: object, opt?: object): StructType
+  (fields?: any[]): StructType
 }
 export default Struct

@@ -1,12 +1,12 @@
-import { Channel } from './channel'
+import { Channel } from "./channel"
 
-jest.mock('./channel')
+jest.mock("./channel")
 
-const channel = new Channel('')
+const channel = new Channel("")
 channel.get()
 
-describe('channel', () => {
-  test('cannot be unit tested as it depends on EPICS', () => {
+describe("channel", () => {
+  test("cannot be unit tested as it depends on EPICS", () => {
     expect(true).toBeTruthy()
   })
 })
