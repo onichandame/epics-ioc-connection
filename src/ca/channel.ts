@@ -180,6 +180,10 @@ export class Channel extends EventEmitter {
     this._connection_state_change_ptr = null
   }
 
+  public isConnected() {
+    return this.connected
+  }
+
   private parseValue(buf: Buffer, type: DataType, count: number): Value {
     const raw: string[] = []
     const bufRef = reinterpret(buf, count * MAX_STRING_SIZE)

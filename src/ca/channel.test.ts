@@ -1,12 +1,19 @@
 import { Channel } from "./channel"
 
-jest.mock("./channel")
-
-const channel = new Channel("")
-channel.get()
+const testPvName = process.env.EPICS_TEST_PVNAME || "root:aoExample"
+const timeout = 1000
 
 describe("channel", () => {
-  test("cannot be unit tested as it depends on EPICS", () => {
-    expect(true).toBeTruthy()
+  let ec: Channel
+  beforeAll(async done => {
+    ec = new Channel(testPvName)
+    await ec.connect({ timeout })
+    done()
+  })
+  test(`Connection to ${testPvName} can be established`, () => {
+    expect(ec.isConnected()).toBeTruthy()
+  })
+  afterAll(() => {
+    ec.disconnect()
   })
 })

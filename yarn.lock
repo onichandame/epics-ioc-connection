@@ -1129,6 +1129,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/ref-napi@^1.4.1":
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/@types/ref-napi/-/ref-napi-1.4.1.tgz#cf5a5ae6a90f6cb2a1d4db21ad32ce0e7c59a6fb"
+  integrity sha512-30A5bpOd+403PJCyyarGH8AOW2IowJ5AZySiGG1B4Sad5CRHt8O+cALEbSUZT+0sE456yAwB2+UjXpH+BIVN1g==
+  dependencies:
+    "@types/node" "*"
+
 "@types/ref-struct-di@*":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@types/ref-struct-di/-/ref-struct-di-1.1.0.tgz#4e7a20c8b2f25a6e4b3cb4a0d615835b61ab8d84"
