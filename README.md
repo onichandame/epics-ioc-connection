@@ -1,3 +1,5 @@
+**This package is not used by the author any more. Hence new features are not going to be added. Bug reports about the existing functions are welcome.**
+
 # EPICS IOC Connection
 
 Forked from [this repo](https://github.com/RobbieClarken/node-epics) but does not have the same signature with the original package.
@@ -20,8 +22,8 @@ This package is not a traditional JS package which only depends on the JS runtim
 
 1. an installation of epics base. The development of this package is based on EPICS 3.14.12.8
 2. one of the below env variables set(Check the meaning of them in the official installation guide of EPICS). If none is installed, it will fallback to the binaries shipped in `clibs` directory, which will not be guaranteed to work in your environment.
-    - LIBCA_PATH
-    - EPICS_BASE and EPICS_HOST_ARCH
+   - LIBCA_PATH
+   - EPICS_BASE and EPICS_HOST_ARCH
 
 ## Installation
 
@@ -34,32 +36,33 @@ npm i epics-ioc-connection
 ## Usage
 
 ```typescript
-import { CA } from 'epics-ioc-connection'
+import { CA } from "epics-ioc-connection"
 
-(async () => {
+;(async () => {
   // self-managed channel
-  const channel = await CA.connect('rootHost:ai1')
-    // get once
-  channel.get()
+  const channel = await CA.connect("rootHost:ai1")
+  // get once
+  channel
+    .get()
     .then(value => console.log(value))
     // put once
     .then(channel.put(4))
-    .then(() => console.log('pushed value to channel'))
+    .then(() => console.log("pushed value to channel"))
     // get new value when value changes
     .then(channel.monitor)
     .then(() => {
-      channel.on('value', value => console.log(value))
+      channel.on("value", value => console.log(value))
     })
-    // disconnect
+  // disconnect
   setTimeout(channel.disconnect, 5000)
 
   // managed methods
-    // get once
-  console.log(await CA.get('rootHost:ai1'))
-    // put once
+  // get once
+  console.log(await CA.get("rootHost:ai1"))
+  // put once
   try {
-    await CA.put('rootHost:ai1', 3)
-  } catch(e) {
+    await CA.put("rootHost:ai1", 3)
+  } catch (e) {
     console.error(`put failed due to ${e}`)
   }
 })()
